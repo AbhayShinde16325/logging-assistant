@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./chat-response.schema.json",
+  "title": "ChatResponse",
+  "description": "Response of POST /api/v1/chat. When requires_confirmation is true, proposed_actions are pending until confirmed/rejected; no state changes have happened at this point.",
+  "type": "object",
+  "required": ["conversation_id", "message", "requires_confirmation", "proposed_actions"],
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "pattern": "^CONV-[0-9a-f]{8}$"
+    },
+    "message": {
+      "type": "string",
+      "description": "Assistant-facing reply text (proposals, answers, clarifications)."
+    },
+    "requires_confirmation": {
+      "type": "boolean",
+      "description": "True iff at least one proposed action is consequential."
+    },
+    "proposed_actions": {
+      "type": "array",
+      "items": { "$ref": "./agent-action.schema.json" },
+      "default": []
+    },
+    "result": {
+      "description": "Present for read-only query actions (kind TASKS/ACTIVITY): inline data the assistant is answering with.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "TASKS" },
+            "tasks": { "type": "array", "items": { "$ref": "./task.schema.json" } }
+          },
+          "required": ["kind", "tasks"]
+        },
+        {
+          "type": ["object", "null"]
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

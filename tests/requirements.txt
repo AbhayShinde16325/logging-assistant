@@ -1,0 +1,7 @@
+# Test/dev tooling for pytest, linting, and type checks (requirements for backend are separate).
+-r ../backend/requirements.txt
+pytest>=8.2
+pytest-asyncio>=0.23
+jsonschema>=4.22
+ruff>=0.4
+mypy>=1.10  # advisory while contracts stabilize (CI runs it --exit-zero style complaints only if enabled)

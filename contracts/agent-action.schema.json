@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./agent-action.schema.json",
+  "title": "AgentAction",
+  "description": "A structured, validated action proposed by the agent. One action per proposal; consequential types require user confirmation via POST /actions/{id}/confirm before any state changes.",
+  "type": "object",
+  "required": ["action_id", "action_type", "payload"],
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "pattern": "^ACT-[0-9a-f]{8}$"
+    },
+    "conversation_id": {
+      "type": "string",
+      "pattern": "^CONV-[0-9a-f]{8}$",
+      "description": "Populated by the backend when the action is part of a chat turn."
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "CREATE_TASK", "UPDATE_TASK", "DELETE_TASK", "COMPLETE_TASK",
+        "ASSIGN_TASK", "CREATE_REMINDER", "QUERY"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "description": "Shape depends on action_type; see definitions.PayloadCreateTask / PayloadUpdateTask / PayloadCreateReminder / PayloadQuery. All foreign keys (assignee_id, task_id, employee_id) are validated by the backend against repository data — model output is never trusted."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "EXECUTED", "REJECTED", "EXPIRED"],
+      "default": "PENDING",
+      "description": "Server-managed lifecycle; clients never set it."
+    }
+  },
+
+  "definitions": {
+    "PayloadCreateTask": {
+      "type": "object",
+      "required": ["title", "assignee_id"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "description": { "type": ["string", "null"], "maxLength": 1000 },
+        "assignee_id": { "type": "string", "pattern": "^EMP-[0-9]{3,}$" },
+        "due_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"], "default": "MEDIUM" }
+      },
+      "additionalProperties": false
+    },
+    "PayloadUpdateTask": {
+      "type": "object",
+      "required": ["task_id"],
+      "minProperties": 2,
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^TASK-[0-9a-f]{8}$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "description": { "type": ["string", "null"], "maxLength": 1000 },
+        "assignee_id": { "type": "string", "pattern": "^EMP-[0-9]{3,}$" },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"] },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "due_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      },
+      "additionalProperties": false
+    },
+    "PayloadDeleteTask": {
+      "type": "object",
+      "required": ["task_id"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^TASK-[0-9a-f]{8}$" }
+      },
+      "additionalProperties": false
+    },
+    "PayloadCompleteTask": {
+      "type": "object",
+      "required": ["task_id"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^TASK-[0-9a-f]{8}$" },
+        "comment": { "type": ["string", "null"], "maxLength": 500 }
+      },
+      "additionalProperties": false
+    },
+    "PayloadAssignTask": {
+      "type": "object",
+      "required": ["task_id", "assignee_id"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^TASK-[0-9a-f]{8}$" },
+        "assignee_id": { "type": "string", "pattern": "^EMP-[0-9]{3,}$" }
+      },
+      "additionalProperties": false
+    },
+    "PayloadCreateReminder": {
+      "type": "object",
+      "required": ["task_id", "scheduled_at"],
+      "properties": {
+        "task_id": { "type": "string", "pattern": "^TASK-[0-9a-f]{8}$" },
+        "scheduled_at": { "type": "string", "format": "date-time", "description": "Absolute UTC after relative phrases are resolved." },
+        "employee_id": { "type": ["string", "null"], "pattern": "^EMP-[0-9]{3,}$", "default": null, "description": "Defaults to the requesting employee." }
+      },
+      "additionalProperties": false
+    },
+    "PayloadQuery": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "kind": { "type": "string", "enum": ["TASKS", "ACTIVITY"], "description": "QUERY actions are read-only and never require confirmation." },
+        "assignee_id": { "type": ["string", "null"], "pattern": "^EMP-[0-9]{3,}$" },
+        "status": { "type": ["string", "null"], "enum": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED", null] },
+        "date_range": {
+          "type": ["object", "null"],
+          "properties": {
+            "from": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+            "to": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

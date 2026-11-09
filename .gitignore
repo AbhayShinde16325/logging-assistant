@@ -1,0 +1,44 @@
+# ---- Secrets & credentials (never commit) ----
+.env
+.env.*
+!.env.example
+credentials/
+credentials.json
+*service-account*.json
+*client_secret*.json
+token*.json
+gcp-*.json
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# ---- Node / Frontend ----
+node_modules/
+frontend/dist/
+.vite/
+*.tsbuildinfo
+
+# ---- Editors / OS ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---- Local scratch ----
+tmp/
+scratch/
+*.log

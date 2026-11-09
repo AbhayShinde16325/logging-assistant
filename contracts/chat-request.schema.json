@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./chat-request.schema.json",
+  "title": "ChatRequest",
+  "description": "Body of POST /api/v1/chat. Processes a message and proposes actions; never mutates state by itself.",
+  "type": "object",
+  "required": ["message"],
+  "properties": {
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "employee_id": {
+      "type": ["string", "null"],
+      "pattern": "^EMP-[0-9]{3,}$",
+      "default": null,
+      "description": "Calling employee. Required when more than one employee exists in the sheet (resolved 422 otherwise). 'Me'/pronouns resolve against this id."
+    },
+    "conversation_id": {
+      "type": ["string", "null"],
+      "pattern": "^CONV-[0-9a-f]{8}$",
+      "default": null,
+      "description": "Omit to start a new conversation; the server generates and returns one."
+    }
+  },
+  "additionalProperties": false
+}

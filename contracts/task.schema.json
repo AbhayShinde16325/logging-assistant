@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "./task.schema.json",
+  "title": "Task",
+  "description": "Shared task entity for backend (Pydantic), frontend (TS), and documentation. IDs are TASK- + 8 hex. Dates YYYY-MM-DD, timestamps ISO 8601 UTC (Z).",
+  "type": "object",
+  "required": [
+    "task_id", "title", "assignee_id", "created_by", "status",
+    "priority", "created_at", "updated_at", "source"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^TASK-[0-9a-f]{8}$",
+      "description": "Stable primary key; never a row number."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 140
+    },
+    "description": {
+      "type": ["string", "null"],
+      "maxLength": 1000,
+      "default": null
+    },
+    "assignee_id": {
+      "type": "string",
+      "pattern": "^EMP-[0-9]{3,}$",
+      "description": "FK to Employees. Must resolve at execution time; never trusted from LLM output alone."
+    },
+    "created_by": {
+      "type": "string",
+      "pattern": "^EMP-[0-9]{3,}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"],
+      "default": "TODO"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "default": "MEDIUM"
+    },
+    "due_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "default": null
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC, e.g. 2026-11-09T07:11:52Z"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Set only by the application on app-side changes; absence/staleness is the manual-edit reconciliation signal."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["CHAT", "VOICE", "MEETING", "MANUAL_SHEET", "API"]
+    },
+    "external_reference": {
+      "type": ["string", "null"],
+      "maxLength": 200,
+      "default": null
+    }
+  },
+  "additionalProperties": false,
+
+  "definitions": {
+    "TaskCreate": {
+      "title": "TaskCreate (frontend TS mirror: TaskCreateInput)",
+      "type": "object",
+      "required": ["title", "assignee_id", "status", "priority"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "description": { "type": ["string", "null"], "maxLength": 1000 },
+        "assignee_id": { "type": "string", "pattern": "^EMP-[0-9]{3,}$" },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"], "default": "TODO" },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"], "default": "MEDIUM" },
+        "due_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "source": { "type": "string", "enum": ["CHAT", "VOICE", "MEETING", "MANUAL_SHEET", "API"], "default": "API" },
+        "external_reference": { "type": ["string", "null"], "maxLength": 200 }
+      },
+      "additionalProperties": false
+    },
+    "TaskPatch": {
+      "title": "TaskPatch (partial update: at least one field required)",
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "description": { "type": ["string", "null"], "maxLength": 1000 },
+        "assignee_id": { "type": "string", "pattern": "^EMP-[0-9]{3,}$" },
+        "status": { "type": "string", "enum": ["TODO", "IN_PROGRESS", "BLOCKED", "DONE", "CANCELLED"] },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "due_date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

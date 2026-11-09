@@ -1,0 +1,19 @@
+# Runtime dependencies (backend + agent + integrations)
+# Keep lean: no paid/cloud-mandatory deps. Every addition needs a reason in the PR.
+
+# Web framework
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9        # multipart/form-data (voice upload) in FastAPI
+pydantic>=2.7
+pydantic-settings>=2.3
+
+# Agent orchestration + model access
+langgraph>=0.2
+httpx>=0.27                    # Ollama HTTP calls + tests transport fakes
+
+# Google Sheets integration
+google-api-python-client>=2.130
+google-auth>=2.30
+
+# Dev / test tooling used by CI above is pinned in tests/requirements.txt

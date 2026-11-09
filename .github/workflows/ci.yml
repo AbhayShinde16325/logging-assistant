@@ -1,0 +1,73 @@
+name: CI
+
+# Continuous integration for the three-person team:
+# 1. backend: pytest unit + contract tests (all external services mocked)
+# 2. frontend: lint, typecheck, build
+# 3. contracts: JSON Schema syntax validation
+# Real Google Sheets integration tests are NOT run here (they require
+# explicit credentials) — see docs/testing-strategy.md.
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend:
+    name: Backend tests (pytest, mocked externals)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install ruff
+          pip install -qq jsonschema
+
+      - name: Lint (ruff, advisory — must not fail the build until lint debt is cleared)
+        run: ruff check . --exit-zero
+        working-directory: .
+
+      - name: Validate contract schemas
+        run: python scripts/validate_contracts.py
+
+      - name: Run tests
+        env:
+          APP_ENV: test
+          GOOGLE_SHEET_TESTS_ENABLED: "0"
+        run: pytest -q
+        working-directory: .
+
+  frontend:
+    name: Frontend checks (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm install
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
