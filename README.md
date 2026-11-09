@@ -187,9 +187,8 @@ Never commit `.env` or credential files.
 ## 13. Run the backend
 
 ```powershell
-cd backend
-..\ .venv\Scripts\Activate.ps1           # once the venv exists (see scripts/)
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+# from the repository root (backend.app.main:app — the package path matters)
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ## 14. Run the frontend
@@ -221,11 +220,18 @@ Set `OLLAMA_MODEL` accordingly. The agent uses a provider abstraction — see
 
 ## 17. Run tests
 
-```bash
-cd backend && pytest                # unit + contract tests (mocked external services)
-cd frontend && npm run test         # frontend checks
-# real integration tests explicitly require credentials:
-GOOGLE_SHEET_TESTS_ENABLED=1 pytest tests/integration -m integration
+```powershell
+# from the repository root — unit + contract layers run WITHOUT credentials (APP_ENV=test
+# keeps the agent on the deterministic heuristic path; integration tests skip by default)
+$env:APP_ENV = "test"
+python -m pytest tests/unit tests/contract -q
+python -m pytest tests/integration -q      # opted-in only (needs creds, see next line)
+
+# real-spreadsheet E2E (throwaway sheet recommended):
+$env:GOOGLE_SHEET_TESTS_ENABLED = "1"; python -m pytest tests/integration -q
+
+# frontend
+cd frontend && npm install && npm run build && npm run test
 ```
 
 Strategy: [`docs/testing-strategy.md`](docs/testing-strategy.md).
