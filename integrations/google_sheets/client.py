@@ -29,7 +29,10 @@ class SheetsClientProto(Protocol):
 
     def get_header(self, tab: str) -> list[str]: ...
     def get_rows(self, tab: str) -> list[list[str]]: ...
-    def append_row(self, tab: str, row: list[str], *, skip_header: bool = True) -> int: ...
+    def append_row(
+        self, tab: str, row: list[str], *, skip_header: bool = True,
+        header: list[str] | None = None,
+    ) -> int: ...
     def update_row(self, tab: str, row_number: int, row: list[str]) -> None: ...
     def clear_row(self, tab: str, row_number: int) -> None: ...
 
@@ -74,7 +77,26 @@ class GoogleSheetsApiClient:
         )
         return result.get("values", []) or []
 
-    def append_row(self, tab: str, row: list[str], *, skip_header: bool = True) -> int:
+    def append_row(
+        self, tab: str, row: list[str], *, skip_header: bool = True,
+        header: list[str] | None = None,
+    ) -> int:
+        # `header` mirrors the memory/fake-client contract: auto-create the header row
+        # on an empty tab so repositories can pass the canonical mapper headers.
+        if header is not None:
+            first = self._call(
+                lambda svc: svc.spreadsheets().values()
+                .get(spreadsheetId=self.spreadsheet_id, range=f"{tab}!A1:Z1").execute()
+            )
+            if not first.get("values"):
+                self._call(
+                    lambda svc: svc.spreadsheets().values()
+                    .update(
+                        spreadsheetId=self.spreadsheet_id, range=f"{tab}!A1",
+                        valueInputOption="USER_ENTERED", body={"values": [header]},
+                    )
+                    .execute()
+                )
         result = self._call(
             lambda svc: svc.spreadsheets().values()
             .append(
